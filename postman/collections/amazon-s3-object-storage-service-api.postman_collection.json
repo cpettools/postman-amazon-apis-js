@@ -1,0 +1,1514 @@
+{
+	"variables": [],
+	"info": {
+		"name": "amazon-s3-object-storage-service-api",
+		"_postman_id": "7be3a0f9-19bd-b84d-4707-dd4d925baf97",
+		"description": "<p>API to the <a href=\"http://docs.aws.amazon.com/AmazonS3/latest/API/Welcome.html\">Amazon S3 REST Service</a> that performs request authentication using the <a href=\"http://docs.aws.amazon.com/AmazonS3/latest/API/sig-v4-authenticating-requests.html\">AWS Signature Version 4 algorithm</a>.</p>\n<p>You must have an <a href=\"http://docs.aws.amazon.com/general/latest/gr/aws-sec-cred-types.html#access-keys-and-secret-access-keys\">Amazon Access Keys</a> in order to send requests in this API.</p>\n<p><b>NOTE: This is not the same as the <a href=\"https://docs.us-phoenix-1.oraclecloud.com/Content/Object/Tasks/s3compatibleapi.htm#usingAPI\">Amazon S3 Compatible API</a> provided with the Oracle Bare Metal Cloud Services, which is essentially an API that proxies requests to S3 through it's own API endpoints.</b></p>",
+		"schema": "https://schema.getpostman.com/json/collection/v2.0.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Namespace",
+			"description": "<p>A namespace is the logical entity that lets you own your personal bucket names.</p>\n<p>Bucket names need to be unique within the context of a namespace, but bucket names can be repeated across namespaces. Each tenant is associated with one default namespace (tenant name) that spans all compartments.</p> \n<p>Within a namespace, buckets and objects exist in flat hierarchy, but you can simulate directories to help navigate a large set of objects (for example, <code>guitars/fender/stratocaster.jpg</code>, <code>guitars/gibson/lespaul.jpg</code>).\n</p>\n<p>To use any of the API operations, you must be authorized in an IAM policy. If you're not authorized, talk to an administrator. If you're an administrator who needs to write policies to give users access, see <a href=\"https://docs.us-phoenix-1.oraclecloud.com/Content/Identity/Concepts/policygetstarted.htm\">Getting Started with Policies</a>.\n</p>",
+			"item": [
+				{
+					"name": "get-namespace",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"// Use private key PEM variable to create a new RequestSigner",
+									"var signer = new bmc.RequestSigner(environment[\"PRIVATE_KEY_PEM\"]);",
+									"",
+									"// Create read-only object containing the request context",
+									"var context = {",
+									"\tAPI_HOST : environment[\"NAMESPACE_NAME\"] + \".compat.objectstorage.us-phoenix-1.oraclecloud.com\",",
+									"\tAPI_VERSION : \"\",",
+									"\tAPI_TENANCY : environment[\"TENANCY\"],",
+									"\tAPI_USER : environment[\"API_USER\"],",
+									"\tAPI_FINGERPRINT : environment[\"API_FINGERPRINT\"],",
+									"\tSTORAGE_NAMESPACE : environment[\"NAMESPACE_NAME\"]",
+									"};",
+									"",
+									"var _request = {",
+									"\tmethod : request.method,",
+									"\turl : request.url.trim(),",
+									"\theaders : request.headers,",
+									"\tdata : request.data,",
+									"\tdataMode : request.dataMode",
+									"};",
+									"",
+									"// Set POSTMAN environment variables associated with url",
+									"postman.setEnvironmentVariable('API_HOST', context[\"API_HOST\"]);",
+									"postman.setEnvironmentVariable('API_VERSION', context[\"API_VERSION\"]);",
+									"",
+									"var atz_header = signer.sign(context, _request);",
+									"",
+									"// Set POSTMAN environment variables associate with headers",
+									"postman.setEnvironmentVariable(\"AUTHORIZATION_HEADER\", atz_header);",
+									"postman.setEnvironmentVariable('REQUEST_TARGET_HEADER', signer.headers[\"REQUEST_TARGET\"]);",
+									"postman.setEnvironmentVariable('DATE_HEADER', signer.headers[\"DATE\"]);",
+									"postman.setEnvironmentVariable(\"OPC_REQUEST_ID_HEADER\", signer.headers[\"OPC_REQUEST_ID\"]);"
+								]
+							}
+						}
+					],
+					"request": {
+						"url": "https://{{API_HOST}}/",
+						"method": "GET",
+						"header": [
+							{
+								"key": "Date",
+								"value": "{{DATE_HEADER}}",
+								"description": ""
+							},
+							{
+								"key": "(request-target)",
+								"value": "{{REQUEST_TARGET_HEADER}}",
+								"description": ""
+							},
+							{
+								"key": "Host",
+								"value": "{{API_HOST}}",
+								"description": ""
+							},
+							{
+								"key": "Authorization",
+								"value": "{{AUTHORIZATION_HEADER}}",
+								"description": ""
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"description": ""
+							},
+							{
+								"key": "opc-request-id",
+								"value": "{{OPC_REQUEST_ID_HEADER}}",
+								"description": ""
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"description": "<p>/\n</p>\n<p>Lists all buckets owned by the authenticated sender of the request.</p>\n"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Bucket",
+			"description": "<p>A bucket is a container for storing objects in a compartment within a namespace. A bucket is associated with a single compartment. The compartment has policies that indicate what actions a user can perform on a bucket and all the objects in the bucket. For more information, see <a href=\"https://docs.us-phoenix-1.oraclecloud.com/Content/Object/Tasks/managingbuckets.htm\">Managing Buckets</a>.\n</p>\n<p>To use any of the API operations, you must be authorized in an IAM policy. If you're not authorized, talk to an administrator. If you're an administrator who needs to write policies to give users access, see <a href=\"https://docs.us-phoenix-1.oraclecloud.com/Content/Identity/Concepts/policygetstarted.htm\">Getting Started with Policies</a>.\n</p>",
+			"item": [
+				{
+					"name": "list-all-my-buckets",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"console.log(request);"
+								]
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"// user=cpet",
+									"// AWS_ACCESS_KEY_ID : \"AKIAI5KH46DEYEGVNFNA\"",
+									"// AWS_SECRET_ACCESS_KEY : \"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\"",
+									"",
+									"// user=opc",
+									"// AWS_ACCESS_KEY_ID : \"AKIAIN754R7GFVCTI76Q\"",
+									"// AWS_SECRET_ACCESS_KEY : \"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\"",
+									"",
+									"// AWS parameters used to create a new RequestSigner",
+									"var aws_params = {",
+									"\tAWS_ACCESS_KEY_ID : \"AKIAIN754R7GFVCTI76Q\",",
+									"\tAWS_SECRET_ACCESS_KEY : \"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\",",
+									"\tAWS_REGION : \"us-east-1\",",
+									"\tAWS_SERVICE : \"s3\",",
+									"\tAWS4_DEBUG : true",
+									"};",
+									"",
+									"var signer = new aws4.RequestSigner(aws_params);",
+									"",
+									"// Create read-only object containing the request context",
+									"var context = {",
+									"\tAPI_HOST : \"s3.amazonaws.com\"",
+									"};",
+									"",
+									"var _request = {",
+									"\tmethod : request.method,",
+									"\turl : new URL(request.url.trim()",
+									"\t        .replace(\"{{API_HOST}}\",context[\"API_HOST\"])",
+									"\t   ),",
+									"\theaders : request.headers,",
+									"\tdata : request.data,",
+									"\tdataMode : request.dataMode",
+									"};",
+									"",
+									"// Set POSTMAN environment variables associated with url",
+									"postman.setEnvironmentVariable('API_HOST', context[\"API_HOST\"]);",
+									"",
+									"var atz_header = signer.sign(context, _request);",
+									"",
+									"// Set POSTMAN environment variables associate with headers",
+									"postman.setEnvironmentVariable(\"AUTHORIZATION_HEADER\", atz_header);",
+									"postman.setEnvironmentVariable('DATE_HEADER', signer.headers[\"DATE\"]);",
+									"",
+									"// Set POSTMAN environment variables associate with additional headers",
+									"postman.setEnvironmentVariable(\"X_AMZ_DATE_HEADER\", signer.headers[\"X_AMZ_DATE\"]);",
+									"postman.setEnvironmentVariable('X_CONTENT_SHA256_HEADER', signer.headers[\"X_CONTENT_SHA256\"]);",
+									"",
+									"console.log(aws_params[\"AWS4_CANONICAL_REQUEST\"]);",
+									"console.log(aws_params[\"AWS4_STRING_TO_SIGN\"]);"
+								]
+							}
+						}
+					],
+					"request": {
+						"url": "https://{{API_HOST}}/",
+						"method": "GET",
+						"header": [
+							{
+								"key": "Date",
+								"value": "{{DATE_HEADER}}",
+								"description": ""
+							},
+							{
+								"key": "Host",
+								"value": "{{API_HOST}}",
+								"description": ""
+							},
+							{
+								"key": "Authorization",
+								"value": "{{AUTHORIZATION_HEADER}}",
+								"description": ""
+							},
+							{
+								"key": "Content-Type",
+								"value": "text/xml",
+								"description": ""
+							},
+							{
+								"key": "x-amz-date",
+								"value": "{{X_AMZ_DATE_HEADER}}",
+								"description": ""
+							},
+							{
+								"key": "x-amz-content-sha256",
+								"value": "{{X_CONTENT_SHA256_HEADER}}",
+								"description": ""
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"description": "<p>/\n</p>\n<p>Returns a list of all buckets owned by the authenticated sender of the request. See <a href=\"http://docs.aws.amazon.com/AmazonS3/latest/API/RESTServiceGET.html\">GET Service</a> for additional details.</p>"
+					},
+					"response": []
+				},
+				{
+					"name": "get-bucket",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"console.log(request);"
+								]
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"// user=cpet",
+									"// AWS_ACCESS_KEY_ID : \"AKIAI5KH46DEYEGVNFNA\"",
+									"// AWS_SECRET_ACCESS_KEY : \"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\"",
+									"",
+									"// user=opc",
+									"// AWS_ACCESS_KEY_ID : \"AKIAIN754R7GFVCTI76Q\"",
+									"// AWS_SECRET_ACCESS_KEY : \"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\"",
+									"",
+									"// AWS parameters used to create a new RequestSigner",
+									"var aws_params = {",
+									"    AWS_S3_HOST : \"s3.amazonaws.com\",",
+									"\tAWS_ACCESS_KEY_ID : \"AKIAI5KH46DEYEGVNFNA\",",
+									"\tAWS_SECRET_ACCESS_KEY : \"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\",",
+									"\tAWS_REGION : \"us-east-1\",",
+									"\tAWS_SERVICE : \"s3\",",
+									"\tAWS4_DEBUG : true",
+									"};",
+									"",
+									"var signer = new aws4.RequestSigner(aws_params);",
+									"",
+									"var _url = new URL(request.url.trim()",
+									"    .replace(\"{{API_HOST}}\", aws_params[\"AWS_S3_HOST\"])",
+									");",
+									"",
+									"// Create read-only object containing the request context",
+									"var context = {",
+									"\tAPI_HOST : _url.hostname,",
+									"\tBUCKET_NAME : _url.hostname.split('.')[0]",
+									"};",
+									"",
+									"var _request = {",
+									"\tmethod : request.method,",
+									"\turl : _url,",
+									"\theaders : request.headers,",
+									"\tdata : request.data,",
+									"\tdataMode : request.dataMode",
+									"};",
+									"",
+									"var atz_header = signer.sign(context, _request);",
+									"",
+									"// Set POSTMAN environment variables associated with url",
+									"postman.setEnvironmentVariable('BUCKET_NAME', context[\"BUCKET_NAME\"]);",
+									"postman.setEnvironmentVariable('API_HOST', aws_params[\"AWS_S3_HOST\"]);",
+									"",
+									"// Set POSTMAN environment variables associate with headers",
+									"postman.setEnvironmentVariable(\"AUTHORIZATION_HEADER\", atz_header);",
+									"postman.setEnvironmentVariable('DATE_HEADER', signer.headers[\"DATE\"]);",
+									"",
+									"// Set POSTMAN environment variables associate with additional headers",
+									"postman.setEnvironmentVariable(\"X_AMZ_DATE_HEADER\", signer.headers[\"X_AMZ_DATE\"]);",
+									"postman.setEnvironmentVariable('X_CONTENT_SHA256_HEADER', signer.headers[\"X_CONTENT_SHA256\"]);",
+									"",
+									"console.log(aws_params[\"AWS4_CANONICAL_REQUEST\"]);",
+									"console.log(aws_params[\"AWS4_STRING_TO_SIGN\"]);"
+								]
+							}
+						}
+					],
+					"request": {
+						"url": {
+							"raw": "https://oinstallbucket.{{API_HOST}}/?list-type=2",
+							"protocol": "https",
+							"host": [
+								"oinstallbucket",
+								"{{API_HOST}}"
+							],
+							"path": [
+								""
+							],
+							"query": [
+								{
+									"key": "list-type",
+									"value": "2",
+									"equals": true,
+									"description": ""
+								}
+							],
+							"variable": []
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Date",
+								"value": "{{DATE_HEADER}}",
+								"description": ""
+							},
+							{
+								"key": "Host",
+								"value": "{{BUCKET_NAME}}.{{API_HOST}}",
+								"description": ""
+							},
+							{
+								"key": "Authorization",
+								"value": "{{AUTHORIZATION_HEADER}}",
+								"description": ""
+							},
+							{
+								"key": "Content-Type",
+								"value": "text/xml",
+								"description": ""
+							},
+							{
+								"key": "x-amz-date",
+								"value": "{{X_AMZ_DATE_HEADER}}",
+								"description": ""
+							},
+							{
+								"key": "x-amz-content-sha256",
+								"value": "{{X_CONTENT_SHA256_HEADER}}",
+								"description": ""
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"description": "<p>/?list-type=2\n</p>\n<p>Returns some or all (up to 1,000) of the objects in a bucket. You can use the request parameters as selection criteria to return a subset of the objects in a bucket. A 200 OK response can contain valid or invalid XML. Make sure to design your application to parse the contents of the response and handle it appropriately. See <a href=\"http://docs.aws.amazon.com/AmazonS3/latest/API/v2-RESTBucketGET.html\">GET Bucket</a> for additional details.</p>"
+					},
+					"response": []
+				},
+				{
+					"name": "get-bucket-cors",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"console.log(request);"
+								]
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"// user=cpet",
+									"// AWS_ACCESS_KEY_ID : \"AKIAI5KH46DEYEGVNFNA\"",
+									"// AWS_SECRET_ACCESS_KEY : \"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\"",
+									"",
+									"// user=opc",
+									"// AWS_ACCESS_KEY_ID : \"AKIAIN754R7GFVCTI76Q\"",
+									"// AWS_SECRET_ACCESS_KEY : \"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\"",
+									"",
+									"// AWS parameters used to create a new RequestSigner",
+									"var aws_params = {",
+									"    AWS_S3_HOST : \"s3.amazonaws.com\",",
+									"\tAWS_ACCESS_KEY_ID : \"AKIAI5KH46DEYEGVNFNA\",",
+									"\tAWS_SECRET_ACCESS_KEY : \"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\",",
+									"\tAWS_REGION : \"us-east-1\",",
+									"\tAWS_SERVICE : \"s3\",",
+									"\tAWS4_DEBUG : true",
+									"};",
+									"",
+									"var signer = new aws4.RequestSigner(aws_params);",
+									"",
+									"var _url = new URL(request.url.trim()",
+									"    .replace(\"{{API_HOST}}\", aws_params[\"AWS_S3_HOST\"])",
+									");",
+									"",
+									"// Create read-only object containing the request context",
+									"var context = {",
+									"\tAPI_HOST : _url.hostname,",
+									"\tBUCKET_NAME : _url.hostname.split('.')[0]",
+									"};",
+									"",
+									"var _request = {",
+									"\tmethod : request.method,",
+									"\turl : _url,",
+									"\theaders : request.headers,",
+									"\tdata : request.data,",
+									"\tdataMode : request.dataMode",
+									"};",
+									"",
+									"var atz_header = signer.sign(context, _request);",
+									"",
+									"// Set POSTMAN environment variables associated with url",
+									"postman.setEnvironmentVariable('BUCKET_NAME', context[\"BUCKET_NAME\"]);",
+									"postman.setEnvironmentVariable('API_HOST', aws_params[\"AWS_S3_HOST\"]);",
+									"",
+									"// Set POSTMAN environment variables associate with headers",
+									"postman.setEnvironmentVariable(\"AUTHORIZATION_HEADER\", atz_header);",
+									"postman.setEnvironmentVariable('DATE_HEADER', signer.headers[\"DATE\"]);",
+									"",
+									"// Set POSTMAN environment variables associate with additional headers",
+									"postman.setEnvironmentVariable(\"X_AMZ_DATE_HEADER\", signer.headers[\"X_AMZ_DATE\"]);",
+									"postman.setEnvironmentVariable('X_CONTENT_SHA256_HEADER', signer.headers[\"X_CONTENT_SHA256\"]);",
+									"",
+									"console.log(aws_params[\"AWS4_CANONICAL_REQUEST\"]);",
+									"console.log(aws_params[\"AWS4_STRING_TO_SIGN\"]);"
+								]
+							}
+						}
+					],
+					"request": {
+						"url": {
+							"raw": "https://oinstallbucket.{{API_HOST}}/?cors",
+							"protocol": "https",
+							"host": [
+								"oinstallbucket",
+								"{{API_HOST}}"
+							],
+							"path": [
+								""
+							],
+							"query": [
+								{
+									"key": "cors",
+									"value": "",
+									"equals": false,
+									"description": ""
+								}
+							],
+							"variable": []
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Date",
+								"value": "{{DATE_HEADER}}",
+								"description": ""
+							},
+							{
+								"key": "Host",
+								"value": "{{BUCKET_NAME}}.{{API_HOST}}",
+								"description": ""
+							},
+							{
+								"key": "Authorization",
+								"value": "{{AUTHORIZATION_HEADER}}",
+								"description": ""
+							},
+							{
+								"key": "Content-Type",
+								"value": "text/xml",
+								"description": ""
+							},
+							{
+								"key": "x-amz-date",
+								"value": "{{X_AMZ_DATE_HEADER}}",
+								"description": ""
+							},
+							{
+								"key": "x-amz-content-sha256",
+								"value": "{{X_CONTENT_SHA256_HEADER}}",
+								"description": ""
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"description": "<p>/?cors\n</p>\n<p>Returns the cors configuration information set for the bucket.</p>\n<p>To use this operation, you must have permission to perform the <code>s3:GetBucketCORS</code> action. By default, the bucket owner has this permission and can grant it to others.</p>\n<p>To learn more <code>cors</code>, go to <a href=\"http://docs.aws.amazon.com/AmazonS3/latest/dev/cors.html\">Enabling Cross-Origin Resource Sharing</a> in the <i>Amazon Simple Storage Service Developer Guide</i>.</p>\n<p>See <a href=\"http://docs.aws.amazon.com/AmazonS3/latest/API/RESTBucketGETcors.html\">GET Bucket cors</a> for additional details.</p>"
+					},
+					"response": []
+				},
+				{
+					"name": "get-bucket-acl",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"console.log(request);"
+								]
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"// user=cpet",
+									"// AWS_ACCESS_KEY_ID : \"AKIAI5KH46DEYEGVNFNA\"",
+									"// AWS_SECRET_ACCESS_KEY : \"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\"",
+									"",
+									"// user=opc",
+									"// AWS_ACCESS_KEY_ID : \"AKIAIN754R7GFVCTI76Q\"",
+									"// AWS_SECRET_ACCESS_KEY : \"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\"",
+									"",
+									"// AWS parameters used to create a new RequestSigner",
+									"var aws_params = {",
+									"    AWS_S3_HOST : \"s3.amazonaws.com\",",
+									"\tAWS_ACCESS_KEY_ID : \"AKIAI5KH46DEYEGVNFNA\",",
+									"\tAWS_SECRET_ACCESS_KEY : \"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\",",
+									"\tAWS_REGION : \"us-east-1\",",
+									"\tAWS_SERVICE : \"s3\",",
+									"\tAWS4_DEBUG : true",
+									"};",
+									"",
+									"var signer = new aws4.RequestSigner(aws_params);",
+									"",
+									"var _url = new URL(request.url.trim()",
+									"    .replace(\"{{API_HOST}}\", aws_params[\"AWS_S3_HOST\"])",
+									");",
+									"",
+									"// Create read-only object containing the request context",
+									"var context = {",
+									"\tAPI_HOST : _url.hostname,",
+									"\tBUCKET_NAME : _url.hostname.split('.')[0]",
+									"};",
+									"",
+									"var _request = {",
+									"\tmethod : request.method,",
+									"\turl : _url,",
+									"\theaders : request.headers,",
+									"\tdata : request.data,",
+									"\tdataMode : request.dataMode",
+									"};",
+									"",
+									"var atz_header = signer.sign(context, _request);",
+									"",
+									"// Set POSTMAN environment variables associated with url",
+									"postman.setEnvironmentVariable('BUCKET_NAME', context[\"BUCKET_NAME\"]);",
+									"postman.setEnvironmentVariable('API_HOST', aws_params[\"AWS_S3_HOST\"]);",
+									"",
+									"// Set POSTMAN environment variables associate with headers",
+									"postman.setEnvironmentVariable(\"AUTHORIZATION_HEADER\", atz_header);",
+									"postman.setEnvironmentVariable('DATE_HEADER', signer.headers[\"DATE\"]);",
+									"",
+									"// Set POSTMAN environment variables associate with additional headers",
+									"postman.setEnvironmentVariable(\"X_AMZ_DATE_HEADER\", signer.headers[\"X_AMZ_DATE\"]);",
+									"postman.setEnvironmentVariable('X_CONTENT_SHA256_HEADER', signer.headers[\"X_CONTENT_SHA256\"]);",
+									"",
+									"console.log(aws_params[\"AWS4_CANONICAL_REQUEST\"]);",
+									"console.log(aws_params[\"AWS4_STRING_TO_SIGN\"]);"
+								]
+							}
+						}
+					],
+					"request": {
+						"url": {
+							"raw": "https://oinstallbucket.{{API_HOST}}/?acl",
+							"protocol": "https",
+							"host": [
+								"oinstallbucket",
+								"{{API_HOST}}"
+							],
+							"path": [
+								""
+							],
+							"query": [
+								{
+									"key": "acl",
+									"value": "",
+									"equals": false,
+									"description": ""
+								}
+							],
+							"variable": []
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Date",
+								"value": "{{DATE_HEADER}}",
+								"description": ""
+							},
+							{
+								"key": "Host",
+								"value": "{{BUCKET_NAME}}.{{API_HOST}}",
+								"description": ""
+							},
+							{
+								"key": "Authorization",
+								"value": "{{AUTHORIZATION_HEADER}}",
+								"description": ""
+							},
+							{
+								"key": "Content-Type",
+								"value": "text/xml",
+								"description": ""
+							},
+							{
+								"key": "x-amz-date",
+								"value": "{{X_AMZ_DATE_HEADER}}",
+								"description": ""
+							},
+							{
+								"key": "x-amz-content-sha256",
+								"value": "{{X_CONTENT_SHA256_HEADER}}",
+								"description": ""
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"description": "<p>/?acl\n</p>\n<p>Uses the <code>acl</code> subresource to return the access control list (ACL) of a bucket.</p>\n<p>To use <code>GET</code> to return the ACL of the bucket, you must have <code>READ_ACP</code> access to the bucket. If <code>READ_ACP</code> permission is granted to the anonymous user, you can return the ACL of the bucket without using an authorization header.</p>\n<p>See <a href=\"http://docs.aws.amazon.com/AmazonS3/latest/API/RESTBucketGETacl.html\">GET Bucket acl</a> for additional details.</p>"
+					},
+					"response": []
+				},
+				{
+					"name": "get-bucket-website",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"console.log(request);"
+								]
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"// user=cpet",
+									"// AWS_ACCESS_KEY_ID : \"AKIAI5KH46DEYEGVNFNA\"",
+									"// AWS_SECRET_ACCESS_KEY : \"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\"",
+									"",
+									"// user=opc",
+									"// AWS_ACCESS_KEY_ID : \"AKIAIN754R7GFVCTI76Q\"",
+									"// AWS_SECRET_ACCESS_KEY : \"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\"",
+									"",
+									"// AWS parameters used to create a new RequestSigner",
+									"var aws_params = {",
+									"    AWS_S3_HOST : \"s3.amazonaws.com\",",
+									"\tAWS_ACCESS_KEY_ID : \"AKIAI5KH46DEYEGVNFNA\",",
+									"\tAWS_SECRET_ACCESS_KEY : \"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\",",
+									"\tAWS_REGION : \"us-east-1\",",
+									"\tAWS_SERVICE : \"s3\",",
+									"\tAWS4_DEBUG : true",
+									"};",
+									"",
+									"var signer = new aws4.RequestSigner(aws_params);",
+									"",
+									"var _url = new URL(request.url.trim()",
+									"    .replace(\"{{API_HOST}}\", aws_params[\"AWS_S3_HOST\"])",
+									");",
+									"",
+									"// Create read-only object containing the request context",
+									"var context = {",
+									"\tAPI_HOST : _url.hostname,",
+									"\tBUCKET_NAME : _url.hostname.split('.')[0]",
+									"};",
+									"",
+									"var _request = {",
+									"\tmethod : request.method,",
+									"\turl : _url,",
+									"\theaders : request.headers,",
+									"\tdata : request.data,",
+									"\tdataMode : request.dataMode",
+									"};",
+									"",
+									"var atz_header = signer.sign(context, _request);",
+									"",
+									"// Set POSTMAN environment variables associated with url",
+									"postman.setEnvironmentVariable('BUCKET_NAME', context[\"BUCKET_NAME\"]);",
+									"postman.setEnvironmentVariable('API_HOST', aws_params[\"AWS_S3_HOST\"]);",
+									"",
+									"// Set POSTMAN environment variables associate with headers",
+									"postman.setEnvironmentVariable(\"AUTHORIZATION_HEADER\", atz_header);",
+									"postman.setEnvironmentVariable('DATE_HEADER', signer.headers[\"DATE\"]);",
+									"",
+									"// Set POSTMAN environment variables associate with additional headers",
+									"postman.setEnvironmentVariable(\"X_AMZ_DATE_HEADER\", signer.headers[\"X_AMZ_DATE\"]);",
+									"postman.setEnvironmentVariable('X_CONTENT_SHA256_HEADER', signer.headers[\"X_CONTENT_SHA256\"]);",
+									"",
+									"console.log(aws_params[\"AWS4_CANONICAL_REQUEST\"]);",
+									"console.log(aws_params[\"AWS4_STRING_TO_SIGN\"]);"
+								]
+							}
+						}
+					],
+					"request": {
+						"url": {
+							"raw": "https://oinstallbucket.{{API_HOST}}/?website",
+							"protocol": "https",
+							"host": [
+								"oinstallbucket",
+								"{{API_HOST}}"
+							],
+							"path": [
+								""
+							],
+							"query": [
+								{
+									"key": "website",
+									"value": "",
+									"equals": false,
+									"description": ""
+								}
+							],
+							"variable": []
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Date",
+								"value": "{{DATE_HEADER}}",
+								"description": ""
+							},
+							{
+								"key": "Host",
+								"value": "{{BUCKET_NAME}}.{{API_HOST}}",
+								"description": ""
+							},
+							{
+								"key": "Authorization",
+								"value": "{{AUTHORIZATION_HEADER}}",
+								"description": ""
+							},
+							{
+								"key": "Content-Type",
+								"value": "text/xml",
+								"description": ""
+							},
+							{
+								"key": "x-amz-date",
+								"value": "{{X_AMZ_DATE_HEADER}}",
+								"description": ""
+							},
+							{
+								"key": "x-amz-content-sha256",
+								"value": "{{X_CONTENT_SHA256_HEADER}}",
+								"description": ""
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"description": "<p>/?website\n</p>\n<p>Returns the website configuration associated with a bucket. To host website on Amazon S3, you can configure a bucket as website by adding a website configuration. For more information about hosting websites, go to <a href=\"http://docs.aws.amazon.com/AmazonS3/latest/dev/WebsiteHosting.html\">Hosting Websites on Amazon S3</a> in the <i>Amazon Simple Storage Service Developer Guide</i>.</p>\n<p>This <code>GET</code> operation requires the <code>S3:GetBucketWebsite</code> permission. By default, only the bucket owner can read the bucket <code>website</code> configuration. However, bucket owners can allow other users to read the <code>website</core> configuration by writing a bucket policy granting them the <code>S3:GetBucketWebsite</code> permission.</p>\n<p>See <a href=\"http://docs.aws.amazon.com/AmazonS3/latest/API/RESTBucketGETwebsite.html\">GET Bucket website</a> for additional details.</p>"
+					},
+					"response": []
+				},
+				{
+					"name": "get-bucket-accelerate",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"console.log(request);"
+								]
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"// user=cpet",
+									"// AWS_ACCESS_KEY_ID : \"AKIAI5KH46DEYEGVNFNA\"",
+									"// AWS_SECRET_ACCESS_KEY : \"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\"",
+									"",
+									"// user=opc",
+									"// AWS_ACCESS_KEY_ID : \"AKIAIN754R7GFVCTI76Q\"",
+									"// AWS_SECRET_ACCESS_KEY : \"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\"",
+									"",
+									"// AWS parameters used to create a new RequestSigner",
+									"var aws_params = {",
+									"    AWS_S3_HOST : \"s3.amazonaws.com\",",
+									"\tAWS_ACCESS_KEY_ID : \"AKIAI5KH46DEYEGVNFNA\",",
+									"\tAWS_SECRET_ACCESS_KEY : \"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\",",
+									"\tAWS_REGION : \"us-east-1\",",
+									"\tAWS_SERVICE : \"s3\",",
+									"\tAWS4_DEBUG : true",
+									"};",
+									"",
+									"var signer = new aws4.RequestSigner(aws_params);",
+									"",
+									"var _url = new URL(request.url.trim()",
+									"    .replace(\"{{API_HOST}}\", aws_params[\"AWS_S3_HOST\"])",
+									");",
+									"",
+									"// Create read-only object containing the request context",
+									"var context = {",
+									"\tAPI_HOST : _url.hostname,",
+									"\tBUCKET_NAME : _url.hostname.split('.')[0]",
+									"};",
+									"",
+									"var _request = {",
+									"\tmethod : request.method,",
+									"\turl : _url,",
+									"\theaders : request.headers,",
+									"\tdata : request.data,",
+									"\tdataMode : request.dataMode",
+									"};",
+									"",
+									"var atz_header = signer.sign(context, _request);",
+									"",
+									"// Set POSTMAN environment variables associated with url",
+									"postman.setEnvironmentVariable('BUCKET_NAME', context[\"BUCKET_NAME\"]);",
+									"postman.setEnvironmentVariable('API_HOST', aws_params[\"AWS_S3_HOST\"]);",
+									"",
+									"// Set POSTMAN environment variables associate with headers",
+									"postman.setEnvironmentVariable(\"AUTHORIZATION_HEADER\", atz_header);",
+									"postman.setEnvironmentVariable('DATE_HEADER', signer.headers[\"DATE\"]);",
+									"",
+									"// Set POSTMAN environment variables associate with additional headers",
+									"postman.setEnvironmentVariable(\"X_AMZ_DATE_HEADER\", signer.headers[\"X_AMZ_DATE\"]);",
+									"postman.setEnvironmentVariable('X_CONTENT_SHA256_HEADER', signer.headers[\"X_CONTENT_SHA256\"]);",
+									"",
+									"console.log(aws_params[\"AWS4_CANONICAL_REQUEST\"]);",
+									"console.log(aws_params[\"AWS4_STRING_TO_SIGN\"]);"
+								]
+							}
+						}
+					],
+					"request": {
+						"url": {
+							"raw": "https://oinstallbucket.{{API_HOST}}/?accelerate",
+							"protocol": "https",
+							"host": [
+								"oinstallbucket",
+								"{{API_HOST}}"
+							],
+							"path": [
+								""
+							],
+							"query": [
+								{
+									"key": "accelerate",
+									"value": "",
+									"equals": false,
+									"description": ""
+								}
+							],
+							"variable": []
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Date",
+								"value": "{{DATE_HEADER}}",
+								"description": ""
+							},
+							{
+								"key": "Host",
+								"value": "{{BUCKET_NAME}}.{{API_HOST}}",
+								"description": ""
+							},
+							{
+								"key": "Authorization",
+								"value": "{{AUTHORIZATION_HEADER}}",
+								"description": ""
+							},
+							{
+								"key": "Content-Type",
+								"value": "text/xml",
+								"description": ""
+							},
+							{
+								"key": "x-amz-date",
+								"value": "{{X_AMZ_DATE_HEADER}}",
+								"description": ""
+							},
+							{
+								"key": "x-amz-content-sha256",
+								"value": "{{X_CONTENT_SHA256_HEADER}}",
+								"description": ""
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"description": "<p>/?accelerate\n</p>\n<p>Uses the <code>accelerate</code> subresource to return the Transfer Acceleration state of a bucket, which is either <code>Enabled</code> or Suspended. Amazon S3 Transfer Acceleration is a bucket-level feature that enables you to perform faster data transfers to and from Amazon S3.</p>\n<p>To use this operation, you must have permission to perform the <code>s3:GetAccelerateConfiguration</code> action. The bucket owner has this permission by default. The bucket owner can grant this permission to others. For more information about permissions, see <a href=\"http://docs.aws.amazon.com/AmazonS3/latest/dev/using-with-s3-actions.html#using-with-s3-actions-related-to-bucket-subresources\">Permissions Related to Bucket Subresource Operations</a> and <a href=\"http://docs.aws.amazon.com/AmazonS3/latest/dev/s3-access-control.html\">Managing Access Permissions to Your Amazon S3 Resources</a> in the <i>Amazon Simple Storage Service Developer Guide</i>.</p>\n<p>See <a href=\"http://docs.aws.amazon.com/AmazonS3/latest/API/RESTBucketGETaccelerate.html\">GET Bucket accelerate</a> for additional details.</p>"
+					},
+					"response": []
+				},
+				{
+					"name": "head-bucket",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"// user=cpet",
+									"// AWS_ACCESS_KEY_ID : \"AKIAI5KH46DEYEGVNFNA\"",
+									"// AWS_SECRET_ACCESS_KEY : \"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\"",
+									"",
+									"// user=opc",
+									"// AWS_ACCESS_KEY_ID : \"AKIAIN754R7GFVCTI76Q\"",
+									"// AWS_SECRET_ACCESS_KEY : \"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\"",
+									"",
+									"// AWS parameters used to create a new RequestSigner",
+									"var aws_params = {",
+									"    AWS_S3_HOST : \"s3.amazonaws.com\",",
+									"\tAWS_ACCESS_KEY_ID : \"AKIAI5KH46DEYEGVNFNA\",",
+									"\tAWS_SECRET_ACCESS_KEY : \"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\",",
+									"\tAWS_REGION : \"us-east-1\",",
+									"\tAWS_SERVICE : \"s3\"",
+									"};",
+									"",
+									"var signer = new aws4.RequestSigner(aws_params);",
+									"",
+									"var _url = new URL(request.url.trim()",
+									"    .replace(\"{{API_HOST}}\", aws_params[\"AWS_S3_HOST\"])",
+									");",
+									"",
+									"// Create read-only object containing the request context",
+									"var context = {",
+									"\tAPI_HOST : _url.hostname,",
+									"\tBUCKET_NAME : _url.hostname.split('.')[0]",
+									"};",
+									"",
+									"var _request = {",
+									"\tmethod : request.method,",
+									"\turl : _url,",
+									"\theaders : request.headers,",
+									"\tdata : request.data,",
+									"\tdataMode : request.dataMode",
+									"};",
+									"",
+									"var atz_header = signer.sign(context, _request);",
+									"",
+									"// Set POSTMAN environment variables associated with url",
+									"postman.setEnvironmentVariable('BUCKET_NAME', context[\"BUCKET_NAME\"]);",
+									"postman.setEnvironmentVariable('API_HOST', aws_params[\"AWS_S3_HOST\"]);",
+									"",
+									"// Set POSTMAN environment variables associate with headers",
+									"postman.setEnvironmentVariable(\"AUTHORIZATION_HEADER\", atz_header);",
+									"postman.setEnvironmentVariable('DATE_HEADER', signer.headers[\"DATE\"]);",
+									"",
+									"// Set POSTMAN environment variables associate with additional headers",
+									"postman.setEnvironmentVariable(\"X_AMZ_DATE_HEADER\", signer.headers[\"X_AMZ_DATE\"]);",
+									"postman.setEnvironmentVariable('X_CONTENT_SHA256_HEADER', signer.headers[\"X_CONTENT_SHA256\"]);"
+								]
+							}
+						}
+					],
+					"request": {
+						"url": "https://cpetbucket.{{API_HOST}}/",
+						"method": "HEAD",
+						"header": [
+							{
+								"key": "Date",
+								"value": "{{DATE_HEADER}}",
+								"description": ""
+							},
+							{
+								"key": "Host",
+								"value": "{{BUCKET_NAME}}.{{API_HOST}}",
+								"description": ""
+							},
+							{
+								"key": "Authorization",
+								"value": "{{AUTHORIZATION_HEADER}}",
+								"description": ""
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"description": ""
+							},
+							{
+								"key": "x-amz-date",
+								"value": "{{X_AMZ_DATE_HEADER}}",
+								"description": ""
+							},
+							{
+								"key": "x-amz-content-sha256",
+								"value": "{{X_CONTENT_SHA256_HEADER}}",
+								"description": ""
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"description": "<p>/\n</p>\n<p>Useful for determining if a bucket exists and you have permission to access it.</p>\n<p>Nothing is return in the response body, but the HTTP status code indicates whether the request succeeded or not. A 200 OK means the bucket exists and you have permission to access it. Any other status code, such as 404 Not Found or 403 Forbidden, means the bucket doesn't exist or you don't have permission to access it. See <a href=\"http://docs.aws.amazon.com/AmazonS3/latest/API/RESTBucketHEAD.html\">HEAD Bucket</a> for additional details.</p>"
+					},
+					"response": []
+				},
+				{
+					"name": "put-bucket",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"console.log(request);"
+								]
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"// user=cpet",
+									"// AWS_ACCESS_KEY_ID : \"AKIAI5KH46DEYEGVNFNA\"",
+									"// AWS_SECRET_ACCESS_KEY : \"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\"",
+									"",
+									"// user=opc",
+									"// AWS_ACCESS_KEY_ID : \"AKIAIN754R7GFVCTI76Q\"",
+									"// AWS_SECRET_ACCESS_KEY : \"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\"",
+									"",
+									"// AWS parameters used to create a new RequestSigner",
+									"var aws_params = {",
+									"    AWS_S3_HOST : \"s3.amazonaws.com\",",
+									"\tAWS_ACCESS_KEY_ID : \"AKIAI5KH46DEYEGVNFNA\",",
+									"\tAWS_SECRET_ACCESS_KEY : \"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\",",
+									"\tAWS_REGION : \"us-east-1\",",
+									"\tAWS_SERVICE : \"s3\",",
+									"\tAWS4_DEBUG : true",
+									"};",
+									"",
+									"var signer = new aws4.RequestSigner(aws_params);",
+									"",
+									"var _url = new URL(request.url.trim()",
+									"    .replace(\"{{API_HOST}}\", aws_params[\"AWS_S3_HOST\"])",
+									");",
+									"",
+									"// Create read-only object containing the request context",
+									"var context = {",
+									"\tAPI_HOST : _url.hostname,",
+									"\tBUCKET_NAME : _url.hostname.split('.')[0]",
+									"};",
+									"",
+									"var _request = {",
+									"\tmethod : request.method,",
+									"\turl : _url,",
+									"\theaders : request.headers,",
+									"\tdata : request.data,",
+									"\tdataMode : request.dataMode",
+									"};",
+									"",
+									"var atz_header = signer.sign(context, _request);",
+									"",
+									"// Set POSTMAN environment variables associated with url",
+									"postman.setEnvironmentVariable('BUCKET_NAME', context[\"BUCKET_NAME\"]);",
+									"postman.setEnvironmentVariable('API_HOST', aws_params[\"AWS_S3_HOST\"]);",
+									"",
+									"// Set POSTMAN environment variables associate with headers",
+									"postman.setEnvironmentVariable(\"AUTHORIZATION_HEADER\", atz_header);",
+									"postman.setEnvironmentVariable('DATE_HEADER', signer.headers[\"DATE\"]);",
+									"",
+									"// Set POSTMAN environment variables associate with additional headers",
+									"postman.setEnvironmentVariable(\"X_AMZ_DATE_HEADER\", signer.headers[\"X_AMZ_DATE\"]);",
+									"postman.setEnvironmentVariable('X_CONTENT_SHA256_HEADER', signer.headers[\"X_CONTENT_SHA256\"]);",
+									"",
+									"console.log(aws_params[\"AWS4_CANONICAL_REQUEST\"]);",
+									"console.log(aws_params[\"AWS4_STRING_TO_SIGN\"]);"
+								]
+							}
+						}
+					],
+					"request": {
+						"url": "https://oinstallbucket.{{API_HOST}}/",
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Date",
+								"value": "{{DATE_HEADER}}",
+								"description": ""
+							},
+							{
+								"key": "Host",
+								"value": "{{BUCKET_NAME}}.{{API_HOST}}",
+								"description": ""
+							},
+							{
+								"key": "Authorization",
+								"value": "{{AUTHORIZATION_HEADER}}",
+								"description": ""
+							},
+							{
+								"key": "Content-Type",
+								"value": "text/xml",
+								"description": ""
+							},
+							{
+								"key": "x-amz-date",
+								"value": "{{X_AMZ_DATE_HEADER}}",
+								"description": ""
+							},
+							{
+								"key": "x-amz-content-sha256",
+								"value": "{{X_CONTENT_SHA256_HEADER}}",
+								"description": ""
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"description": "<p>/\n</p>\n<p>Creates a new bucket named after a portion of the hostname used in the URL (i.e. https://<b>opcbucket</b>.s3.amazonaws.com/).</p>\n<p>Not every string is an acceptable bucket name. For information on bucket naming restrictions, see <a href=\"http://docs.aws.amazon.com/AmazonS3/latest/dev/UsingBucket.html\">Working with Amazon S3 Buckets</a>.</p>\n<p>By default, the bucket is created in the US East (N. Virginia) region. You can optionally specify a region in the request body. You might choose a region to optimize latency, minimize costs, or address regulatory requirements. For example, if you reside in Europe, you will probably find it advantageous to create buckets in the EU (Ireland) region. For more information, see <a href=\"http://docs.aws.amazon.com/AmazonS3/latest/dev/UsingBucket.html#access-bucket-intro\">How to Select a Region for Your Buckets</a>.</p>\n<p><b>Note:</b> If you create a bucket in a region other than US East (N. Virginia) region, your application must be able to handle 307 redirect. For more information, go to <a href=\"http://docs.aws.amazon.com/AmazonS3/latest/dev/VirtualHosting.html\">Virtual Hosting of Buckets</a> in <i>Amazon Simple Storage Service Developer Guide</i>.</p>\n<p>Nothing is return in the response body, but the HTTP status code indicates whether the request succeeded or not. A 200 OK means the bucket was created successfully. Any other status code, such as 404 Not Found or 403 Forbidden, means the bucket could not be created. See <a href=\"http://docs.aws.amazon.com/AmazonS3/latest/API/RESTBucketPUT.html\">PUT Bucket</a> for additional details.</p>"
+					},
+					"response": []
+				},
+				{
+					"name": "put-bucket-website",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"console.log(request);"
+								]
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"// user=cpet",
+									"// AWS_ACCESS_KEY_ID : \"AKIAI5KH46DEYEGVNFNA\"",
+									"// AWS_SECRET_ACCESS_KEY : \"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\"",
+									"",
+									"// user=opc",
+									"// AWS_ACCESS_KEY_ID : \"AKIAIN754R7GFVCTI76Q\"",
+									"// AWS_SECRET_ACCESS_KEY : \"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\"",
+									"",
+									"// AWS parameters used to create a new RequestSigner",
+									"var aws_params = {",
+									"    AWS_S3_HOST : \"s3.amazonaws.com\",",
+									"\tAWS_ACCESS_KEY_ID : \"AKIAI5KH46DEYEGVNFNA\",",
+									"\tAWS_SECRET_ACCESS_KEY : \"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\",",
+									"\tAWS_REGION : \"us-east-1\",",
+									"\tAWS_SERVICE : \"s3\",",
+									"\tAWS4_DEBUG : true",
+									"};",
+									"",
+									"var signer = new aws4.RequestSigner(aws_params);",
+									"",
+									"var _url = new URL(request.url.trim()",
+									"    .replace(\"{{API_HOST}}\", aws_params[\"AWS_S3_HOST\"])",
+									");",
+									"",
+									"// Create read-only object containing the request context",
+									"var context = {",
+									"\tAPI_HOST : _url.hostname,",
+									"\tBUCKET_NAME : _url.hostname.split('.')[0]",
+									"};",
+									"",
+									"var _request = {",
+									"\tmethod : request.method,",
+									"\turl : _url,",
+									"\theaders : request.headers,",
+									"\tdata : request.data,",
+									"\tdataMode : request.dataMode",
+									"};",
+									"",
+									"var atz_header = signer.sign(context, _request);",
+									"",
+									"// Set POSTMAN environment variables associated with url",
+									"postman.setEnvironmentVariable('BUCKET_NAME', context[\"BUCKET_NAME\"]);",
+									"postman.setEnvironmentVariable('API_HOST', aws_params[\"AWS_S3_HOST\"]);",
+									"",
+									"// Set POSTMAN environment variables associate with headers",
+									"postman.setEnvironmentVariable(\"AUTHORIZATION_HEADER\", atz_header);",
+									"postman.setEnvironmentVariable('DATE_HEADER', signer.headers[\"DATE\"]);",
+									"",
+									"// Set POSTMAN environment variables associate with additional headers",
+									"postman.setEnvironmentVariable(\"X_AMZ_DATE_HEADER\", signer.headers[\"X_AMZ_DATE\"]);",
+									"postman.setEnvironmentVariable('X_CONTENT_SHA256_HEADER', signer.headers[\"X_CONTENT_SHA256\"]);",
+									"",
+									"console.log(aws_params[\"AWS4_CANONICAL_REQUEST\"]);",
+									"console.log(aws_params[\"AWS4_STRING_TO_SIGN\"]);"
+								]
+							}
+						}
+					],
+					"request": {
+						"url": {
+							"raw": "https://oinstallbucket.{{API_HOST}}/?website",
+							"protocol": "https",
+							"host": [
+								"oinstallbucket",
+								"{{API_HOST}}"
+							],
+							"path": [
+								""
+							],
+							"query": [
+								{
+									"key": "website",
+									"value": "",
+									"equals": false,
+									"description": ""
+								}
+							],
+							"variable": []
+						},
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Date",
+								"value": "{{DATE_HEADER}}",
+								"description": ""
+							},
+							{
+								"key": "Host",
+								"value": "{{BUCKET_NAME}}.{{API_HOST}}",
+								"description": ""
+							},
+							{
+								"key": "Authorization",
+								"value": "{{AUTHORIZATION_HEADER}}",
+								"description": ""
+							},
+							{
+								"key": "Content-Type",
+								"value": "text/xml",
+								"description": ""
+							},
+							{
+								"key": "x-amz-date",
+								"value": "{{X_AMZ_DATE_HEADER}}",
+								"description": ""
+							},
+							{
+								"key": "x-amz-content-sha256",
+								"value": "{{X_CONTENT_SHA256_HEADER}}",
+								"description": ""
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "<WebsiteConfiguration xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\">\n    <IndexDocument>\n        <Suffix>index.html</Suffix>\n    </IndexDocument>\n    <ErrorDocument>\n        <Key>404.html</Key>\n    </ErrorDocument>\n</WebsiteConfiguration>"
+						},
+						"description": "<p>/?website\n</p>\n<p>Sets configuration of <code>website</code> subresource for bucket name used in the URL (i.e. https://<b>oinstallbucket</b>.s3.amazonaws.com/). To configure a bucket as a website, you can add this subresource on the bucket with website configuration information such as the file name of the index document and any redirect rules. For more information, go to <a href=\"http://docs.aws.amazon.com/AmazonS3/latest/dev/WebsiteHosting.html\">Hosting Websites on Amazon S3</a> in the <i>Amazon Simple Storage Service Developer Guide</i>.</p>\n<p>This <code>PUT</code> operation requires the <code>S3:PutBucketWebsite</code> permission. By default, only the bucket owner can configure the <code>website</code> attached to a bucket; however, bucket owners can allow other users to set the <code>website</code> configuration by writing a bucket policy that grants them the <code>S3:PutBucketWebsite</code> permission.</p>\n<p>Nothing is return in the response body, but the HTTP status code indicates whether the request succeeded or not. A 200 OK means the bucket website was created successfully. Any other status code, such as 404 Not Found or 403 Forbidden, means the bucket website could not be created.</p>\n<p>See <a href=\"http://docs.aws.amazon.com/AmazonS3/latest/API/RESTBucketPUTwebsite.html\">PUT Bucket website</a> for additional details.</p>"
+					},
+					"response": []
+				},
+				{
+					"name": "put-bucket-accelerate",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"console.log(request);"
+								]
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"// user=cpet",
+									"// AWS_ACCESS_KEY_ID : \"AKIAI5KH46DEYEGVNFNA\"",
+									"// AWS_SECRET_ACCESS_KEY : \"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\"",
+									"",
+									"// user=opc",
+									"// AWS_ACCESS_KEY_ID : \"AKIAIN754R7GFVCTI76Q\"",
+									"// AWS_SECRET_ACCESS_KEY : \"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\"",
+									"",
+									"// AWS parameters used to create a new RequestSigner",
+									"var aws_params = {",
+									"    AWS_S3_HOST : \"s3.amazonaws.com\",",
+									"\tAWS_ACCESS_KEY_ID : \"AKIAI5KH46DEYEGVNFNA\",",
+									"\tAWS_SECRET_ACCESS_KEY : \"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\",",
+									"\tAWS_REGION : \"us-east-1\",",
+									"\tAWS_SERVICE : \"s3\",",
+									"\tAWS4_DEBUG : true",
+									"};",
+									"",
+									"var signer = new aws4.RequestSigner(aws_params);",
+									"",
+									"var _url = new URL(request.url.trim()",
+									"    .replace(\"{{API_HOST}}\", aws_params[\"AWS_S3_HOST\"])",
+									");",
+									"",
+									"// Create read-only object containing the request context",
+									"var context = {",
+									"\tAPI_HOST : _url.hostname,",
+									"\tBUCKET_NAME : _url.hostname.split('.')[0]",
+									"};",
+									"",
+									"var _request = {",
+									"\tmethod : request.method,",
+									"\turl : _url,",
+									"\theaders : request.headers,",
+									"\tdata : request.data,",
+									"\tdataMode : request.dataMode",
+									"};",
+									"",
+									"var atz_header = signer.sign(context, _request);",
+									"",
+									"// Set POSTMAN environment variables associated with url",
+									"postman.setEnvironmentVariable('BUCKET_NAME', context[\"BUCKET_NAME\"]);",
+									"postman.setEnvironmentVariable('API_HOST', aws_params[\"AWS_S3_HOST\"]);",
+									"",
+									"// Set POSTMAN environment variables associate with headers",
+									"postman.setEnvironmentVariable(\"AUTHORIZATION_HEADER\", atz_header);",
+									"postman.setEnvironmentVariable('DATE_HEADER', signer.headers[\"DATE\"]);",
+									"",
+									"// Set POSTMAN environment variables associate with additional headers",
+									"postman.setEnvironmentVariable(\"X_AMZ_DATE_HEADER\", signer.headers[\"X_AMZ_DATE\"]);",
+									"postman.setEnvironmentVariable('X_CONTENT_SHA256_HEADER', signer.headers[\"X_CONTENT_SHA256\"]);",
+									"",
+									"console.log(aws_params[\"AWS4_CANONICAL_REQUEST\"]);",
+									"console.log(aws_params[\"AWS4_STRING_TO_SIGN\"]);"
+								]
+							}
+						}
+					],
+					"request": {
+						"url": {
+							"raw": "https://oinstallbucket.{{API_HOST}}/?accelerate",
+							"protocol": "https",
+							"host": [
+								"oinstallbucket",
+								"{{API_HOST}}"
+							],
+							"path": [
+								""
+							],
+							"query": [
+								{
+									"key": "accelerate",
+									"value": "",
+									"equals": false,
+									"description": ""
+								}
+							],
+							"variable": []
+						},
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Date",
+								"value": "{{DATE_HEADER}}",
+								"description": ""
+							},
+							{
+								"key": "Host",
+								"value": "{{BUCKET_NAME}}.{{API_HOST}}",
+								"description": ""
+							},
+							{
+								"key": "Authorization",
+								"value": "{{AUTHORIZATION_HEADER}}",
+								"description": ""
+							},
+							{
+								"key": "Content-Type",
+								"value": "text/xml",
+								"description": ""
+							},
+							{
+								"key": "x-amz-date",
+								"value": "{{X_AMZ_DATE_HEADER}}",
+								"description": ""
+							},
+							{
+								"key": "x-amz-content-sha256",
+								"value": "{{X_CONTENT_SHA256_HEADER}}",
+								"description": ""
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "<AccelerateConfiguration xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\"> \n  <Status>Enabled</Status> \n</AccelerateConfiguration>"
+						},
+						"description": "<p>/?accelerate\n</p>\n<p>Sets configuration of <code>accelerate</code> subresource for bucket name used in the URL (i.e. https://<b>oinstallbucket</b>.s3.amazonaws.com/). Amazon S3 Transfer Acceleration is a bucket-level feature that enables you to perform faster data transfers to Amazon S3.</p>\n<p>To use this operation, you must have permission to perform the <code>s3:PutAccelerateConfiguration</code> action. The bucket owner has this permission by default. The bucket owner can grant this permission to others. For more information about permissions, see <a href=\"http://docs.aws.amazon.com/AmazonS3/latest/dev/using-with-s3-actions.html#using-with-s3-actions-related-to-bucket-subresources\">Permissions Related to Bucket Subresource Operations</a> and <a href=\"http://docs.aws.amazon.com/AmazonS3/latest/dev/s3-access-control.html\">Managing Access Permissions to Your Amazon S3 Resources</a> in the <i>Amazon Simple Storage Service Developer Guide</i>.</p>\n<p>The Transfer Acceleration state of a bucket can be set to one of the following two values:>/p>\n<ul>\n<li>Enabled – Enables accelerated data transfers to the bucket.</li>\n<li>Suspended – Disables accelerated data transfers to the bucket.</li>\n</ul>\n</p>\n<p>Nothing is return in the response body, but the HTTP status code indicates whether the request succeeded or not. A 200 OK means the bucket accelerate was created successfully. Any other status code, such as 404 Not Found or 403 Forbidden, means the bucket accelerate could not be set.</p>\n<p>See <a href=\"http://docs.aws.amazon.com/AmazonS3/latest/API/RESTBucketPUTaccelerate.html\">PUT Bucket accelerate</a> for additional details.</p>"
+					},
+					"response": []
+				},
+				{
+					"name": "delete-bucket",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"// user=cpet",
+									"// AWS_ACCESS_KEY_ID : \"AKIAI5KH46DEYEGVNFNA\"",
+									"// AWS_SECRET_ACCESS_KEY : \"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\"",
+									"",
+									"// user=opc",
+									"// AWS_ACCESS_KEY_ID : \"AKIAIN754R7GFVCTI76Q\"",
+									"// AWS_SECRET_ACCESS_KEY : \"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\"",
+									"",
+									"// AWS parameters used to create a new RequestSigner",
+									"var aws_params = {",
+									"    AWS_S3_HOST : \"s3.amazonaws.com\",",
+									"\tAWS_ACCESS_KEY_ID : \"AKIAIN754R7GFVCTI76Q\",",
+									"\tAWS_SECRET_ACCESS_KEY : \"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\",",
+									"\tAWS_REGION : \"us-east-1\",",
+									"\tAWS_SERVICE : \"s3\",",
+									"\tAWS4_DEBUG : true",
+									"};",
+									"",
+									"var signer = new aws4.RequestSigner(aws_params);",
+									"",
+									"var _url = new URL(request.url.trim()",
+									"    .replace(\"{{API_HOST}}\", aws_params[\"AWS_S3_HOST\"])",
+									");",
+									"",
+									"// Create read-only object containing the request context",
+									"var context = {",
+									"\tAPI_HOST : _url.hostname,",
+									"\tBUCKET_NAME : _url.hostname.split('.')[0]",
+									"};",
+									"",
+									"var _request = {",
+									"\tmethod : request.method,",
+									"\turl : _url,",
+									"\theaders : request.headers,",
+									"\tdata : request.data,",
+									"\tdataMode : request.dataMode",
+									"};",
+									"",
+									"var atz_header = signer.sign(context, _request);",
+									"",
+									"// Set POSTMAN environment variables associated with url",
+									"postman.setEnvironmentVariable('BUCKET_NAME', context[\"BUCKET_NAME\"]);",
+									"postman.setEnvironmentVariable('API_HOST', aws_params[\"AWS_S3_HOST\"]);",
+									"",
+									"// Set POSTMAN environment variables associate with headers",
+									"postman.setEnvironmentVariable(\"AUTHORIZATION_HEADER\", atz_header);",
+									"postman.setEnvironmentVariable('DATE_HEADER', signer.headers[\"DATE\"]);",
+									"",
+									"// Set POSTMAN environment variables associate with additional headers",
+									"postman.setEnvironmentVariable(\"X_AMZ_DATE_HEADER\", signer.headers[\"X_AMZ_DATE\"]);",
+									"postman.setEnvironmentVariable('X_CONTENT_SHA256_HEADER', signer.headers[\"X_CONTENT_SHA256\"]);",
+									"",
+									"//console.log(aws_params[\"AWS4_CANONICAL_REQUEST\"]);",
+									"//console.log(aws_params[\"AWS4_STRING_TO_SIGN\"]);"
+								]
+							}
+						}
+					],
+					"request": {
+						"url": "https://opcbucket.{{API_HOST}}/",
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Date",
+								"value": "{{DATE_HEADER}}",
+								"description": ""
+							},
+							{
+								"key": "Host",
+								"value": "{{BUCKET_NAME}}.{{API_HOST}}",
+								"description": ""
+							},
+							{
+								"key": "Authorization",
+								"value": "{{AUTHORIZATION_HEADER}}",
+								"description": ""
+							},
+							{
+								"key": "Content-Type",
+								"value": "text/xml",
+								"description": ""
+							},
+							{
+								"key": "x-amz-date",
+								"value": "{{X_AMZ_DATE_HEADER}}",
+								"description": ""
+							},
+							{
+								"key": "x-amz-content-sha256",
+								"value": "{{X_CONTENT_SHA256_HEADER}}",
+								"description": ""
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"description": "<p>/\n</p>\n<p>Deletes the bucket named in the hostname of URI (i.e. https://<b>opcbucket</b>.s3.amazonaws.com/).</p>\n<p>All objects (including all object versions and delete markers) in the bucket must be deleted before the bucket itself can be deleted. See <a href=\"http://docs.aws.amazon.com/AmazonS3/latest/API/RESTBucketDELETE.html\">DELETE Bucket</a> for additional details.</p>"
+					},
+					"response": []
+				}
+			]
+		}
+	]
+}
